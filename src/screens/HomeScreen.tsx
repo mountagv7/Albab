@@ -1,127 +1,207 @@
-import React, { useRef, useEffect } from 'react';
-import {
-  View, Text, StyleSheet, ScrollView, Animated,
-} from 'react-native';
+import React, { useRef } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { GlowingLogo } from '../components/GlowingLogo';
-import { AlbabCard } from '../components/AlbabCard';
+import { LinearGradient } from 'expo-linear-gradient';
+import Svg, { Path, Circle, Line, Rect } from 'react-native-svg';
+import { PrayerBanner } from '../components/PrayerBanner';
+import { SessionCard } from '../components/SessionCard';
 import { Colors } from '../theme/colors';
-import { t } from '../i18n';
+import { arabicVerses, sessions, SessionType } from '../data/mockData';
 
-const MOCK_BARS = [
-  { label: 'Mon', productive: 0.7, distracting: 0.3 },
-  { label: 'Tue', productive: 0.5, distracting: 0.6 },
-  { label: 'Wed', productive: 0.8, distracting: 0.2 },
-  { label: 'Thu', productive: 0.4, distracting: 0.7 },
-  { label: 'Fri', productive: 0.9, distracting: 0.15 },
-  { label: 'Sat', productive: 0.3, distracting: 0.8 },
-  { label: 'Sun', productive: 0.6, distracting: 0.4 },
-];
+const verse = arabicVerses[0];
+const PROGRESS = 65;
 
-const BAR_MAX = 64;
+// Sessions displayed on Home — exclude Khushu Mode (id=1)
+const homeSessions = sessions.filter(s => s.id !== 1);
 
-export function HomeScreen() {
-  const fadeAnim = useRef(new Animated.Value(0)).current;
+// ── SVG Icons ────────────────────────────────────────────────
+const GOLD = Colors.gold;
 
-  useEffect(() => {
-    Animated.timing(fadeAnim, { toValue: 1, duration: 600, useNativeDriver: true }).start();
-  }, []);
+function MosqueIcon({ size = 24 }: { size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M12 2C10.5 2 9.5 3 9.5 4C9.5 5 10 5.5 10 6C8.5 6.5 7 8 7 10V11H5V20H19V11H17V10C17 8 15.5 6.5 14 6C14 5.5 14.5 5 14.5 4C14.5 3 13.5 2 12 2Z"
+        stroke={GOLD} strokeWidth={1.5} strokeLinejoin="round"
+      />
+      <Path d="M9 20V15C9 13.3 10.3 12 12 12C13.7 12 15 13.3 15 15V20" stroke={GOLD} strokeWidth={1.5} />
+      <Path d="M5 11H3V20H5" stroke={GOLD} strokeWidth={1.5} strokeLinejoin="round" />
+      <Path d="M19 11H21V20H19" stroke={GOLD} strokeWidth={1.5} strokeLinejoin="round" />
+    </Svg>
+  );
+}
 
+function FlameIcon({ size = 14 }: { size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M12 2C12 2 7 7 7 13C7 15.76 9.24 18 12 18C14.76 18 17 15.76 17 13C17 10 15 8 14 7C14 9 13 10 12 11C11 10 11 8 12 2Z"
+        stroke={GOLD} strokeWidth={1.5} strokeLinejoin="round"
+      />
+      <Path
+        d="M12 18C10.34 18 9 19.34 9 21H15C15 19.34 13.66 18 12 18Z"
+        stroke={GOLD} strokeWidth={1.5} strokeLinejoin="round"
+      />
+    </Svg>
+  );
+}
+
+function MoonIcon({ size = 22 }: { size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"
+        stroke={GOLD} strokeWidth={1.5} strokeLinejoin="round"
+      />
+    </Svg>
+  );
+}
+
+function ChevronIcon({ size = 18 }: { size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path d="M9 18L15 12L9 6" stroke={GOLD} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
+    </Svg>
+  );
+}
+
+// ── Animated Khushu toggle ────────────────────────────────────
+function KhushuToggle({ onPress }: { onPress: () => void }) {
+  const anim = useRef(new Animated.Value(0)).current;
+  const isOn = useRef(false);
+
+  function toggle() {
+    const next = isOn.current ? 0 : 1;
+    isOn.current = !isOn.current;
+    Animated.timing(anim, {
+      toValue: next,
+      duration: 220,
+      useNativeDriver: false,
+    }).start();
+    if (next === 1) onPress();
+  }
+
+  const bgColor = anim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['#2a2a2a', Colors.gold],
+  });
+  const thumbX = anim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [2, 22],
+  });
+
+  return (
+    <TouchableOpacity onPress={toggle} activeOpacity={0.85}>
+      <Animated.View style={[styles.toggleTrack, { backgroundColor: bgColor }]}>
+        <Animated.View style={[styles.toggleThumb, { transform: [{ translateX: thumbX }] }]} />
+      </Animated.View>
+    </TouchableOpacity>
+  );
+}
+
+// ── Props ─────────────────────────────────────────────────────
+interface Props {
+  onStartSession: (session: SessionType) => void;
+  onKhushuPress: () => void;
+}
+
+export function HomeScreen({ onStartSession, onKhushuPress }: Props) {
   return (
     <View style={styles.container}>
       <SafeAreaView edges={['top']} style={{ flex: 1 }}>
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scroll}
+        >
           {/* Header */}
           <View style={styles.header}>
-            <View>
-              <Text style={styles.appName}>{t('appName')}</Text>
-              <Text style={styles.tagline}>{t('appTagline')}</Text>
+            <Text style={styles.salam}>السلام عليكم</Text>
+            <Text style={styles.greeting}>Bonsoir, Ali</Text>
+          </View>
+
+          {/* Prayer banner */}
+          <PrayerBanner />
+
+          {/* Objectif du jour */}
+          <View style={styles.card}>
+            <View style={styles.objectifRow}>
+              <View>
+                <Text style={styles.cardLabel}>OBJECTIF DU JOUR</Text>
+                <Text style={styles.objectifValue}>
+                  1h 57min{' '}
+                  <Text style={styles.objectifTotal}>/ 3h</Text>
+                </Text>
+              </View>
+              <View style={styles.solideBadge}>
+                <Text style={styles.solideText}>Solide</Text>
+              </View>
             </View>
-            <View style={styles.todayBadge}>
-              <Text style={styles.todayText}>{t('today')}</Text>
+
+            <View style={styles.progressTrack}>
+              <LinearGradient
+                colors={[Colors.green, Colors.gold]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={[styles.progressFill, { width: `${PROGRESS}%` }]}
+              />
+            </View>
+
+            <View style={styles.streakRow}>
+              <FlameIcon size={13} />
+              <Text style={styles.streakText}>
+                Streak actuel :{' '}
+                <Text style={styles.streakValue}>14 jours</Text>
+              </Text>
             </View>
           </View>
 
-          {/* Logo + screen time */}
-          <Animated.View style={[styles.logoSection, { opacity: fadeAnim }]}>
-            <GlowingLogo size={175} />
-            <Text style={styles.screenTime}>2h 18m</Text>
-            <Text style={styles.screenTimeLabel}>{t('screenTimeToday')}</Text>
-          </Animated.View>
-
-          {/* Stat mini cards */}
-          <Animated.View style={[styles.statsRow, { opacity: fadeAnim }]}>
-            {/* Left */}
-            <View style={[styles.miniCard, { flex: 1 }]}>
-              <View style={styles.miniCardHeader}>
-                <View style={[styles.appDot, { backgroundColor: '#E1306C' }]}><Text style={styles.appLetter}>I</Text></View>
-                <Text style={styles.miniLabel}>{t('mostUsed')}</Text>
-              </View>
-              <Text style={styles.miniValue}>Instagram</Text>
-              <Text style={styles.miniSub}>50m</Text>
-            </View>
-
-            {/* Center */}
-            <View style={[styles.miniCard, styles.miniCardCenter, { flex: 1 }]}>
-              <Text style={styles.miniValueLg}>90%</Text>
-              <View style={styles.changeTag}>
-                <Text style={styles.changeText}>+14.8% ↗</Text>
-              </View>
-              <Text style={styles.miniSubCenter}>{t('screenTimeDown')}</Text>
-            </View>
-
-            {/* Right */}
-            <View style={[styles.miniCard, { flex: 1 }]}>
-              <View style={styles.miniCardHeader}>
-                <View style={[styles.appDot, { backgroundColor: '#111' }]}><Text style={styles.appLetter}>T</Text></View>
-                <Text style={styles.miniLabel}>{t('mostUsed')}</Text>
-              </View>
-              <Text style={styles.miniValue}>TikTok</Text>
-              <Text style={styles.miniSub}>33m</Text>
-            </View>
-          </Animated.View>
-
-          {/* Bar chart */}
-          <Animated.View style={{ opacity: fadeAnim }}>
-            <AlbabCard style={styles.chartCard}>
-              <View style={styles.legendRow}>
-                <View style={styles.legendItem}>
-                  <View style={[styles.legendDot, { backgroundColor: Colors.productive }]} />
-                  <Text style={styles.legendText}>{t('productive')}</Text>
-                </View>
-                <View style={styles.legendItem}>
-                  <View style={[styles.legendDot, { backgroundColor: Colors.distracting }]} />
-                  <Text style={styles.legendText}>{t('distracting')}</Text>
-                </View>
-              </View>
-              <View style={styles.barsRow}>
-                {MOCK_BARS.map((d, i) => (
-                  <View key={i} style={styles.barGroup}>
-                    <View style={styles.barPair}>
-                      <View style={[styles.bar, { height: BAR_MAX * d.productive, backgroundColor: Colors.productive }]} />
-                      <View style={[styles.bar, { height: BAR_MAX * d.distracting, backgroundColor: Colors.distracting }]} />
-                    </View>
-                    <Text style={styles.barLabel}>{d.label}</Text>
-                  </View>
-                ))}
-              </View>
-            </AlbabCard>
-          </Animated.View>
-
-          {/* Islamic reminder */}
-          <Animated.View style={{ opacity: fadeAnim }}>
-            <AlbabCard goldBorder style={styles.reminderCard}>
-              <View style={styles.reminderHeader}>
-                <View style={styles.reminderBar} />
-                <Text style={styles.reminderTitle}>{t('reminder')}</Text>
-              </View>
-              <Text style={styles.arabicText}>وَالْعَصْرِ ﴿١﴾ إِنَّ الْإِنسَانَ لَفِي خُسْرٍ</Text>
-              <Text style={styles.reminderTranslation}>
-                "By time, indeed, mankind is in loss."
+          {/* Challenge actif */}
+          <LinearGradient
+            colors={['rgba(201,168,76,0.15)', 'rgba(201,168,76,0.05)']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.challengeBanner}
+          >
+            <MoonIcon size={24} />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.challengeLabel}>CHALLENGE ACTIF</Text>
+              <Text style={styles.challengeName}>
+                Ramadan Challenge — Jour 14/30
               </Text>
-              <Text style={styles.reminderSource}>Surah Al-Asr, 103:1-2</Text>
-            </AlbabCard>
-          </Animated.View>
+            </View>
+            <ChevronIcon size={18} />
+          </LinearGradient>
+
+          {/* ── Khushu Mode row ──────────────────────────────────── */}
+          <View style={styles.khushuRow}>
+            <View style={styles.khushuIconWrap}>
+              <MosqueIcon size={22} />
+            </View>
+            <View style={styles.khushuText}>
+              <Text style={styles.khushuTitle}>Khushu Mode</Text>
+              <Text style={styles.khushuAr}>خشوع</Text>
+            </View>
+            <KhushuToggle onPress={onKhushuPress} />
+          </View>
+
+          {/* ── Sessions ─────────────────────────────────────────── */}
+          <Text style={styles.sectionLabel}>MES SESSIONS</Text>
+          {homeSessions.map((s, i) => (
+            <SessionCard
+              key={s.id}
+              session={s}
+              onPress={() => onStartSession(s)}
+              delay={i * 60}
+            />
+          ))}
+
+          {/* Verse watermark */}
+          <View style={styles.verseWrap}>
+            <Text style={styles.verseAr}>{verse.ar}</Text>
+            <Text style={styles.verseFr}>
+              {verse.fr} — {verse.source}
+            </Text>
+          </View>
         </ScrollView>
       </SafeAreaView>
     </View>
@@ -130,51 +210,141 @@ export function HomeScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
-  scroll: { paddingHorizontal: 16, paddingBottom: 24 },
+  scroll: { paddingHorizontal: 23, paddingBottom: 116 },
 
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 16 },
-  appName: { color: Colors.textPrimary, fontSize: 22, fontWeight: '800' },
-  tagline: { color: Colors.textSecondary, fontSize: 12 },
-  todayBadge: { backgroundColor: Colors.surfaceElevated, borderRadius: 20, borderWidth: 1, borderColor: Colors.border, paddingHorizontal: 14, paddingVertical: 7 },
-  todayText: { color: Colors.textPrimary, fontSize: 13, fontWeight: '600' },
+  header: { paddingTop: 23, marginBottom: 28 },
+  salam: { fontSize: 14, color: Colors.textMuted, letterSpacing: 1, marginBottom: 5 },
+  greeting: { fontSize: 28, fontWeight: '700', color: Colors.textPrimary, letterSpacing: -0.5 },
 
-  logoSection: { alignItems: 'center', paddingVertical: 20, gap: 12 },
-  screenTime: { color: Colors.textPrimary, fontSize: 44, fontWeight: '700', letterSpacing: -1 },
-  screenTimeLabel: { color: Colors.textSecondary, fontSize: 11, fontWeight: '600', letterSpacing: 1.5 },
-
-  statsRow: { flexDirection: 'row', gap: 10, marginBottom: 14 },
-  miniCard: {
-    backgroundColor: Colors.surfaceElevated, borderRadius: 14,
-    borderWidth: 1, borderColor: Colors.border, padding: 12, gap: 4,
+  card: {
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: 19,
+    padding: 21,
+    marginBottom: 19,
   },
-  miniCardCenter: { alignItems: 'center', justifyContent: 'center' },
-  miniCardHeader: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  appDot: { width: 22, height: 22, borderRadius: 6, alignItems: 'center', justifyContent: 'center' },
-  appLetter: { color: '#fff', fontSize: 12, fontWeight: '700' },
-  miniLabel: { color: Colors.textMuted, fontSize: 9, fontWeight: '700', letterSpacing: 0.8 },
-  miniValue: { color: Colors.textPrimary, fontSize: 14, fontWeight: '700' },
-  miniValueLg: { color: Colors.textPrimary, fontSize: 22, fontWeight: '700' },
-  miniSub: { color: Colors.textSecondary, fontSize: 11 },
-  miniSubCenter: { color: Colors.textSecondary, fontSize: 9, textAlign: 'center', marginTop: 2 },
-  changeTag: { backgroundColor: 'rgba(93,217,193,0.15)', borderRadius: 6, paddingHorizontal: 6, paddingVertical: 3, marginVertical: 4 },
-  changeText: { color: Colors.productive, fontSize: 11, fontWeight: '700' },
+  objectifRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 14,
+  },
+  cardLabel: {
+    fontSize: 13,
+    color: Colors.textMuted,
+    letterSpacing: 0.8,
+    marginBottom: 3,
+  },
+  objectifValue: { fontSize: 18, fontWeight: '600', color: Colors.textPrimary },
+  objectifTotal: { color: Colors.textMuted, fontWeight: '400' },
+  solideBadge: {
+    backgroundColor: Colors.goldBg,
+    borderWidth: 1,
+    borderColor: 'rgba(201,168,76,0.3)',
+    borderRadius: 23,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+  },
+  solideText: { fontSize: 13, color: Colors.gold, fontWeight: '600' },
 
-  chartCard: { marginBottom: 14 },
-  legendRow: { flexDirection: 'row', gap: 20, marginBottom: 16 },
-  legendItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  legendDot: { width: 8, height: 8, borderRadius: 4 },
-  legendText: { color: Colors.textSecondary, fontSize: 10, fontWeight: '600', letterSpacing: 0.8 },
-  barsRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', height: 90 },
-  barGroup: { alignItems: 'center', gap: 6 },
-  barPair: { flexDirection: 'row', gap: 2, alignItems: 'flex-end' },
-  bar: { width: 11, borderRadius: 3, minHeight: 4 },
-  barLabel: { color: Colors.textMuted, fontSize: 10 },
+  progressTrack: {
+    backgroundColor: '#1a1a1a',
+    borderRadius: 7,
+    height: 7,
+    overflow: 'hidden',
+    marginBottom: 9,
+  },
+  progressFill: { height: '100%', borderRadius: 7 },
 
-  reminderCard: { marginBottom: 14 },
-  reminderHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 },
-  reminderBar: { width: 3, height: 14, backgroundColor: Colors.gold, borderRadius: 2 },
-  reminderTitle: { color: Colors.gold, fontSize: 9, fontWeight: '700', letterSpacing: 1.2 },
-  arabicText: { color: Colors.textPrimary, fontSize: 17, lineHeight: 28, textAlign: 'right', marginBottom: 8 },
-  reminderTranslation: { color: Colors.textSecondary, fontSize: 13, fontStyle: 'italic', lineHeight: 20, marginBottom: 6 },
-  reminderSource: { color: Colors.textMuted, fontSize: 11 },
+  streakRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  streakText: { fontSize: 12, color: Colors.textMuted },
+  streakValue: { color: Colors.gold },
+
+  challengeBanner: {
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(201,168,76,0.35)',
+    paddingVertical: 14,
+    paddingHorizontal: 19,
+    marginBottom: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+  },
+  challengeLabel: {
+    fontSize: 13,
+    color: Colors.gold,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+    marginBottom: 3,
+  },
+  challengeName: { fontSize: 15, color: Colors.textPrimary },
+
+  // ── Khushu row ──────────────────────────────────────────────
+  khushuRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    marginBottom: 23,
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: 14,
+    gap: 14,
+  },
+  khushuIconWrap: {
+    width: 38,
+    height: 38,
+    borderRadius: 10,
+    backgroundColor: Colors.goldBg,
+    borderWidth: 1,
+    borderColor: 'rgba(201,168,76,0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  khushuText: { flex: 1 },
+  khushuTitle: { fontSize: 15, fontWeight: '600', color: Colors.textPrimary },
+  khushuAr: { fontSize: 12, color: Colors.textMuted, marginTop: 2 },
+
+  // Toggle
+  toggleTrack: {
+    width: 46,
+    height: 26,
+    borderRadius: 13,
+    justifyContent: 'center',
+  },
+  toggleThumb: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: '#fff',
+  },
+
+  sectionLabel: {
+    fontSize: 13,
+    color: Colors.textMuted,
+    letterSpacing: 0.8,
+    marginBottom: 14,
+  },
+
+  // ── Verse ──────────────────────────────────────────────────
+  verseWrap: {
+    alignItems: 'center',
+    paddingVertical: 23,
+    opacity: 0.4,
+    gap: 7,
+  },
+  verseAr: {
+    fontSize: 20,
+    color: Colors.textMuted,
+    textAlign: 'center',
+    lineHeight: 33,
+  },
+  verseFr: {
+    fontSize: 12,
+    color: Colors.textMuted,
+    textAlign: 'center',
+  },
 });

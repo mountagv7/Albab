@@ -1,97 +1,95 @@
 import React, { useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { View, TouchableOpacity, Text, StyleSheet, Platform } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { NavigationContainer } from '@react-navigation/native';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 
-import { OnboardingScreen } from './src/screens/OnboardingScreen';
+import { BottomNav, TabId } from './src/components/BottomNav';
 import { HomeScreen } from './src/screens/HomeScreen';
-import { FocusScreen } from './src/screens/FocusScreen';
-import { StatsScreen } from './src/screens/StatsScreen';
-import { ProfileScreen } from './src/screens/ProfileScreen';
+import { SessionsScreen } from './src/screens/SessionsScreen';
+import { ChallengesScreen } from './src/screens/ChallengesScreen';
+import { RihlaScreen } from './src/screens/RihlaScreen';
+import { NiyyahScreen } from './src/screens/NiyyahScreen';
+import { ActiveSessionScreen } from './src/screens/ActiveSessionScreen';
+import { KhushuScreen } from './src/screens/KhushuScreen';
 import { Colors } from './src/theme/colors';
-import { t } from './src/i18n';
+import { SessionType } from './src/data/mockData';
 
-const Tab = createBottomTabNavigator();
-
-const NAV_ICONS: Record<string, { active: string; inactive: string }> = {
-  Home:    { active: '⌂', inactive: '⌂' },
-  Focus:   { active: '◉', inactive: '○' },
-  Stats:   { active: '▦', inactive: '▤' },
-  Profile: { active: '◉', inactive: '○' },
-};
-
-function TabBar({ state, descriptors, navigation }: any) {
-  const labels = [t('navHome'), t('navFocus'), t('navStats'), t('navProfile')];
-  const icons = ['🏠', '⏱', '📊', '👤'];
-
-  return (
-    <View style={tabStyles.bar}>
-      {state.routes.map((route: any, index: number) => {
-        const isFocused = state.index === index;
-        return (
-          <TouchableOpacity
-            key={route.key}
-            style={tabStyles.item}
-            onPress={() => navigation.navigate(route.name)}
-            activeOpacity={0.7}
-          >
-            <Text style={[tabStyles.icon, isFocused && tabStyles.iconActive]}>
-              {icons[index]}
-            </Text>
-            <Text style={[tabStyles.label, isFocused && tabStyles.labelActive]}>
-              {labels[index]}
-            </Text>
-          </TouchableOpacity>
-        );
-      })}
-    </View>
-  );
-}
+type Screen = 'main' | 'niyyah' | 'active' | 'khushu';
 
 export default function App() {
-  const [onboarded, setOnboarded] = useState(false);
+  const [tab, setTab]                     = useState<TabId>('home');
+  const [screen, setScreen]               = useState<Screen>('main');
+  const [selectedSession, setSelectedSession] = useState<SessionType | null>(null);
+  const [niyyah, setNiyyah]               = useState('');
 
-  if (!onboarded) {
-    return (
-      <SafeAreaProvider>
-        <StatusBar style="light" />
-        <OnboardingScreen onDone={() => setOnboarded(true)} />
-      </SafeAreaProvider>
-    );
+  function handleStartSession(session: SessionType) {
+    setSelectedSession(session);
+    setScreen('niyyah');
+  }
+
+  function handleLaunch(n: string) {
+    setNiyyah(n);
+    setScreen('active');
+  }
+
+  function handleBack() {
+    setScreen('main');
+    setSelectedSession(null);
+    setNiyyah('');
   }
 
   return (
     <SafeAreaProvider>
       <StatusBar style="light" />
-      <NavigationContainer>
-        <Tab.Navigator
-          tabBar={(props) => <TabBar {...props} />}
-          screenOptions={{ headerShown: false }}
-        >
-          <Tab.Screen name="Home" component={HomeScreen} />
-          <Tab.Screen name="Focus" component={FocusScreen} />
-          <Tab.Screen name="Stats" component={StatsScreen} />
-          <Tab.Screen name="Profile" component={ProfileScreen} />
-        </Tab.Navigator>
-      </NavigationContainer>
+      <View style={styles.root}>
+
+        {/* ─── Khushu screen ─────────────────────────────────── */}
+        {screen === 'khushu' && (
+          <KhushuScreen onBack={handleBack} />
+        )}
+
+        {/* ─── Niyyah screen ─────────────────────────────────── */}
+        {screen === 'niyyah' && selectedSession && (
+          <NiyyahScreen
+            session={selectedSession}
+            onBack={handleBack}
+            onLaunch={handleLaunch}
+          />
+        )}
+
+        {/* ─── Active session screen ──────────────────────────── */}
+        {screen === 'active' && selectedSession && (
+          <ActiveSessionScreen
+            session={selectedSession}
+            niyyah={niyyah}
+            onEnd={handleBack}
+          />
+        )}
+
+        {/* ─── Main tab screens ───────────────────────────────── */}
+        {screen === 'main' && (
+          <>
+            {tab === 'home' && (
+              <HomeScreen
+                onStartSession={handleStartSession}
+                onKhushuPress={() => setScreen('khushu')}
+              />
+            )}
+            {tab === 'sessions' && (
+              <SessionsScreen onStartSession={handleStartSession} />
+            )}
+            {tab === 'challenges' && <ChallengesScreen />}
+            {tab === 'rihla' && <RihlaScreen />}
+
+            <BottomNav active={tab} onSelect={setTab} />
+          </>
+        )}
+
+      </View>
     </SafeAreaProvider>
   );
 }
 
-const tabStyles = StyleSheet.create({
-  bar: {
-    flexDirection: 'row',
-    backgroundColor: Colors.surface,
-    borderTopWidth: 1,
-    borderTopColor: Colors.border,
-    paddingBottom: Platform.OS === 'ios' ? 24 : 8,
-    paddingTop: 8,
-  },
-  item: { flex: 1, alignItems: 'center', gap: 4 },
-  icon: { fontSize: 20, opacity: 0.4 },
-  iconActive: { opacity: 1 },
-  label: { fontSize: 10, fontWeight: '500', color: Colors.textMuted },
-  labelActive: { color: Colors.gold, fontWeight: '600' },
+const styles = StyleSheet.create({
+  root: { flex: 1, backgroundColor: Colors.background },
 });
