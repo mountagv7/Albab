@@ -1,7 +1,8 @@
 import React from 'react';
 import { TouchableOpacity, Text, StyleSheet, ViewStyle, ActivityIndicator } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Colors } from '../theme/colors';
+import { useTheme } from '../context/ThemeContext';
+import { S } from '../theme/styles';
 
 interface Props {
   label: string;
@@ -11,18 +12,27 @@ interface Props {
 }
 
 export function GoldButton({ label, onPress, loading = false, style }: Props) {
+  const { accentColor, accentDark, buttonTextColor } = useTheme();
+
+  // 8-digit hex: last two chars are alpha (E6 = 90%)
+  const accentAt90 = accentColor + 'E6';
+
   return (
-    <TouchableOpacity onPress={onPress} activeOpacity={0.85} style={[styles.wrapper, style]}>
+    <TouchableOpacity
+      onPress={onPress}
+      activeOpacity={0.85}
+      style={[styles.wrapper, { shadowColor: accentColor }, style]}
+    >
       <LinearGradient
-        colors={[Colors.goldDim, Colors.gold, Colors.goldLight]}
+        colors={[accentAt90, accentDark]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={styles.gradient}
       >
         {loading ? (
-          <ActivityIndicator color="#000" size="small" />
+          <ActivityIndicator color={buttonTextColor} size="small" />
         ) : (
-          <Text style={styles.label}>{label}</Text>
+          <Text style={[styles.label, { color: buttonTextColor }]}>{label}</Text>
         )}
       </LinearGradient>
     </TouchableOpacity>
@@ -32,11 +42,7 @@ export function GoldButton({ label, onPress, loading = false, style }: Props) {
 const styles = StyleSheet.create({
   wrapper: {
     borderRadius: 14,
-    shadowColor: Colors.gold,
-    shadowOpacity: 0.4,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 6,
+    ...S.strongGlow,
   },
   gradient: {
     height: 54,
@@ -45,9 +51,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   label: {
-    color: '#000',
-    fontSize: 16,
-    fontWeight: '700',
+    ...S.btnLabel,
     letterSpacing: 0.2,
   },
 });

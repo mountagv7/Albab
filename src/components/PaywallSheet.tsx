@@ -10,6 +10,8 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '../theme/colors';
+import { useTheme } from '../context/ThemeContext';
+import { S } from '../theme/styles';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -25,6 +27,7 @@ interface Props {
 }
 
 export function PaywallSheet({ visible, onClose, children, snapHeight }: Props) {
+  const { accentBorder } = useTheme();
   const insets = useSafeAreaInsets();
   const translateY = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
   const backdropOpacity = useRef(new Animated.Value(0)).current;
@@ -141,6 +144,7 @@ export function PaywallSheet({ visible, onClose, children, snapHeight }: Props) 
               ? SCREEN_HEIGHT * snapHeight
               : SCREEN_HEIGHT * 0.92,
             transform: [{ translateY: sheetTranslateY }],
+            borderColor: accentBorder,
           },
         ]}
       >
@@ -172,7 +176,6 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 24,
     borderWidth: 1,
     borderBottomWidth: 0,
-    borderColor: 'rgba(201,168,76,0.15)',
     overflow: 'hidden',
   },
 
@@ -182,9 +185,7 @@ const styles = StyleSheet.create({
     paddingBottom: 8,
   },
   handle: {
+    ...S.handle,
     width: 38,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: '#3a3a3a',
   },
 });

@@ -6,7 +6,9 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Colors } from '../theme/colors';
+import { useTheme } from '../context/ThemeContext';
 import { SessionType } from '../data/mockData';
+import { S } from '../theme/styles';
 
 const SUGGESTIONS = [
   "Étudier pour la satisfaction d'Allah",
@@ -22,6 +24,7 @@ interface Props {
 }
 
 export function NiyyahScreen({ session, onBack, onLaunch }: Props) {
+  const { accentColor, accentBg, accentDim } = useTheme();
   const [niyyah, setNiyyah] = useState('');
 
   return (
@@ -39,7 +42,7 @@ export function NiyyahScreen({ session, onBack, onLaunch }: Props) {
           contentContainerStyle={styles.scroll}
           keyboardShouldPersistTaps="handled"
         >
-          <Text style={styles.tag}>NIYYAH — النية</Text>
+          <Text style={[styles.tag, { color: accentColor }]}>NIYYAH — النية</Text>
           <Text style={styles.title}>Quelle est ton intention ?</Text>
           <Text style={styles.hadith}>
             "Les actes ne valent que par les intentions."{'\n'}
@@ -48,7 +51,7 @@ export function NiyyahScreen({ session, onBack, onLaunch }: Props) {
 
           {/* Arabic accent */}
           <View style={styles.arabicAccent}>
-            <Text style={styles.arabicAccentText}>بِسْمِ اللَّهِ</Text>
+            <Text style={[styles.arabicAccentText, { color: accentColor }]}>بِسْمِ اللَّهِ</Text>
           </View>
 
           {/* Textarea */}
@@ -58,7 +61,7 @@ export function NiyyahScreen({ session, onBack, onLaunch }: Props) {
             placeholder="Qu'est-ce que tu veux accomplir pour Allah ?"
             placeholderTextColor="#444"
             multiline
-            style={[styles.input, niyyah ? styles.inputActive : null]}
+            style={[styles.input, niyyah ? [styles.inputActive, { borderColor: accentColor + '66' }] : null]}
           />
 
           {/* Suggestions */}
@@ -69,13 +72,13 @@ export function NiyyahScreen({ session, onBack, onLaunch }: Props) {
               onPress={() => setNiyyah(s)}
               style={[
                 styles.suggestion,
-                niyyah === s && styles.suggestionActive,
+                niyyah === s && [styles.suggestionActive, { backgroundColor: accentBg, borderColor: accentColor + '4D' }],
               ]}
             >
               <Text
                 style={[
                   styles.suggestionText,
-                  niyyah === s && styles.suggestionTextActive,
+                  niyyah === s && { color: accentColor },
                 ]}
               >
                 {s}
@@ -109,7 +112,7 @@ export function NiyyahScreen({ session, onBack, onLaunch }: Props) {
             activeOpacity={0.85}
           >
             <LinearGradient
-              colors={[Colors.gold, '#a8782a']}
+              colors={[accentColor, accentDim]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={styles.launchBtn}
@@ -129,92 +132,67 @@ export function NiyyahScreen({ session, onBack, onLaunch }: Props) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
+  container: { flex: 1 },
 
-  topBar: { paddingHorizontal: 23, paddingTop: 14 },
-  backBtn: { paddingVertical: 5, alignSelf: 'flex-start' },
-  backText: { fontSize: 15, color: Colors.textMuted },
+  topBar:   { paddingHorizontal: 23, paddingTop: 14 },
+  backBtn:  { ...S.backBtn },
+  backText: { ...S.backText },
 
   scroll: { paddingHorizontal: 23, paddingBottom: 28 },
 
-  tag: {
-    fontSize: 13, color: Colors.gold, letterSpacing: 1, marginBottom: 7, marginTop: 23,
-  },
-  title: {
-    fontSize: 26, fontWeight: '700', color: Colors.textPrimary,
-    lineHeight: 33, marginBottom: 9,
-  },
-  hadith: {
-    fontSize: 15, color: Colors.textMuted, lineHeight: 23,
-  },
+  tag:   { fontSize: 13, letterSpacing: 1, marginBottom: 7, marginTop: 23 },
+  title: { fontSize: 26, fontWeight: '700', color: Colors.textPrimary, lineHeight: 33, marginBottom: 9 },
+  hadith:       { fontSize: 15, color: Colors.textMuted, lineHeight: 23 },
   hadithSource: { fontSize: 13, opacity: 0.7 },
 
-  arabicAccent: { alignItems: 'center', paddingVertical: 28, opacity: 0.15 },
-  arabicAccentText: { fontSize: 37, color: Colors.gold },
+  arabicAccent:     { alignItems: 'center', paddingVertical: 28, opacity: 0.15 },
+  arabicAccentText: { fontSize: 37 },
 
   input: {
-    backgroundColor: Colors.surface,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: 16,
-    padding: 19,
-    color: Colors.textPrimary,
-    fontSize: 18,
-    lineHeight: 28,
-    height: 128,
+    ...S.input,
+    borderRadius:      16,
+    padding:           19,
+    fontSize:          18,
+    lineHeight:        28,
+    height:            128,
     textAlignVertical: 'top',
-    marginBottom: 23,
+    marginBottom:      23,
   },
-  inputActive: { borderColor: 'rgba(201,168,76,0.4)' },
+  inputActive: {},
 
-  suggestionsLabel: {
-    fontSize: 13, color: Colors.textMuted, letterSpacing: 0.6, marginBottom: 12,
-  },
+  suggestionsLabel: { ...S.label, letterSpacing: 0.6, marginBottom: 12 },
   suggestion: {
-    backgroundColor: Colors.surface,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: 12,
-    paddingVertical: 12,
+    ...S.input,
+    borderRadius:      12,
+    paddingVertical:   12,
     paddingHorizontal: 16,
-    marginBottom: 9,
+    marginBottom:      9,
+    padding:           0,
   },
-  suggestionActive: {
-    backgroundColor: Colors.goldBg,
-    borderColor: 'rgba(201,168,76,0.3)',
-  },
-  suggestionText: { fontSize: 15, color: Colors.textSecondary },
-  suggestionTextActive: { color: Colors.gold },
+  suggestionActive:     {},
+  suggestionText:       { fontSize: 15, color: Colors.textSecondary },
+  suggestionTextActive: {},
 
   summary: {
-    backgroundColor: '#0f0f0f',
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: 14,
-    flexDirection: 'row',
-    marginTop: 23,
-    marginBottom: 9,
+    backgroundColor: Colors.surfaceDeep,
+    borderWidth:     1,
+    borderColor:     Colors.border,
+    borderRadius:    14,
+    flexDirection:   'row',
+    marginTop:       23,
+    marginBottom:    9,
   },
-  summaryItem: { flex: 1, alignItems: 'center', paddingVertical: 14 },
-  summaryLabel: { fontSize: 12, color: Colors.textMuted, marginBottom: 5 },
-  summaryValue: { fontSize: 15, color: Colors.textPrimary, fontWeight: '600', textAlign: 'center' },
-  summaryDivider: { width: 1, backgroundColor: Colors.border },
+  summaryItem:    { flex: 1, alignItems: 'center', paddingVertical: 14 },
+  summaryLabel:   { ...S.label, marginBottom: 5 },
+  summaryValue:   { fontSize: 15, color: Colors.textPrimary, fontWeight: '600', textAlign: 'center' },
+  summaryDivider: { ...S.divider, width: 1, height: undefined },
 
   footer: {
     paddingHorizontal: 23,
-    paddingBottom: 47,
-    paddingTop: 9,
+    paddingBottom:     47,
+    paddingTop:        9,
   },
-  launchBtn: {
-    borderRadius: 16,
-    paddingVertical: 19,
-    alignItems: 'center',
-  },
+  launchBtn:  { borderRadius: 16, paddingVertical: 19, alignItems: 'center' },
   launchText: { fontSize: 19, fontWeight: '700', color: '#000' },
-  skipHint: {
-    textAlign: 'center',
-    marginTop: 12,
-    fontSize: 13,
-    color: Colors.textMuted,
-  },
+  skipHint:   { textAlign: 'center', marginTop: 12, ...S.meta },
 });

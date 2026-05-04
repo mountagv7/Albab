@@ -4,7 +4,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { AlbabCard } from '../components/AlbabCard';
 import { PremiumBadge } from '../components/PremiumBadge';
 import { Colors } from '../theme/colors';
+import { useTheme } from '../context/ThemeContext';
 import { t } from '../i18n';
+import { S } from '../theme/styles';
 
 const DAYS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 const VALUES = [0.65, 0.82, 0.45, 0.90, 0.70, 0.30, 0.55];
@@ -18,6 +20,7 @@ const TOP_APPS = [
 ];
 
 export function StatsScreen() {
+  const { accentColor, accentBg, accentBorder } = useTheme();
   const [period, setPeriod] = useState(0);
   const periods = [t('today'), t('week'), t('month')];
 
@@ -32,10 +35,11 @@ export function StatsScreen() {
             {periods.map((p, i) => (
               <TouchableOpacity
                 key={i}
-                style={[styles.periodBtn, i === period && styles.periodBtnActive]}
+                style={[styles.periodBtn, i === period && [styles.periodBtnActive, { backgroundColor: accentBg, borderColor: accentBorder }]]}
+
                 onPress={() => setPeriod(i)}
               >
-                <Text style={[styles.periodText, i === period && styles.periodTextActive]}>{p}</Text>
+                <Text style={[styles.periodText, i === period && [styles.periodTextActive, { color: accentColor }]]}>{p}</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -43,7 +47,7 @@ export function StatsScreen() {
           {/* Summary cards */}
           <View style={styles.summaryRow}>
             <View style={styles.statCard}>
-              <Text style={[styles.statIcon, { color: Colors.gold }]}>📱</Text>
+              <Text style={[styles.statIcon, { color: accentColor }]}>📱</Text>
               <Text style={styles.statValue}>2h 18m</Text>
               <Text style={styles.statLabel}>{t('screenTimeToday')}</Text>
             </View>
@@ -68,10 +72,10 @@ export function StatsScreen() {
                 <View key={i} style={styles.weekBarGroup}>
                   <View style={[
                     styles.weekBar,
-                    { height: VALUES[i] * 70, backgroundColor: i === TODAY ? Colors.gold : Colors.productive },
-                    i === TODAY && styles.weekBarToday,
+                    { height: VALUES[i] * 70, backgroundColor: i === TODAY ? accentColor : Colors.productive },
+                    i === TODAY && [styles.weekBarToday, { shadowColor: accentColor }],
                   ]} />
-                  <Text style={[styles.weekBarLabel, i === TODAY && { color: Colors.gold, fontWeight: '700' }]}>
+                  <Text style={[styles.weekBarLabel, i === TODAY && { color: accentColor, fontWeight: '700' }]}>
                     {day}
                   </Text>
                 </View>
@@ -117,47 +121,53 @@ export function StatsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
-  scroll: { paddingHorizontal: 16, paddingBottom: 24 },
-  title: { color: Colors.textPrimary, fontSize: 22, fontWeight: '700', marginTop: 16, marginBottom: 16 },
+  container:  { flex: 1 },
+  scroll:     { paddingHorizontal: 16, paddingBottom: 24 },
+  title:      { ...S.screenTitle },
 
   periodSelector: {
-    flexDirection: 'row', backgroundColor: Colors.surfaceElevated,
-    borderRadius: 12, borderWidth: 1, borderColor: Colors.border,
-    padding: 3, marginBottom: 16,
+    flexDirection:   'row',
+    backgroundColor: Colors.surfaceElevated,
+    borderRadius:    12,
+    borderWidth:     1,
+    borderColor:     Colors.border,
+    padding:         3,
+    marginBottom:    16,
   },
-  periodBtn: { flex: 1, paddingVertical: 8, borderRadius: 9, alignItems: 'center' },
-  periodBtnActive: { backgroundColor: 'rgba(201,168,76,0.12)', borderWidth: 1, borderColor: Colors.borderGold },
-  periodText: { color: Colors.textSecondary, fontSize: 13 },
-  periodTextActive: { color: Colors.gold, fontWeight: '600' },
+  periodBtn:        { flex: 1, paddingVertical: 8, borderRadius: 9, alignItems: 'center' },
+  periodBtnActive:  { borderWidth: 1 },
+  periodText:       { color: Colors.textSecondary, fontSize: 13 },
+  periodTextActive: { fontWeight: '600' },
 
   summaryRow: { flexDirection: 'row', gap: 10, marginBottom: 14 },
   statCard: {
-    flex: 1, backgroundColor: Colors.surfaceElevated, borderRadius: 14,
-    borderWidth: 1, borderColor: Colors.border, padding: 14, gap: 6,
+    ...S.cardElevated,
+    flex:    1,
+    padding: 14,
+    gap:     6,
   },
-  statIcon: { fontSize: 18 },
+  statIcon:  { fontSize: 18 },
   statValue: { color: Colors.textPrimary, fontSize: 17, fontWeight: '700' },
   statLabel: { color: Colors.textMuted, fontSize: 10, fontWeight: '500' },
 
-  card: { marginBottom: 14 },
-  cardTitle: { color: Colors.textPrimary, fontSize: 15, fontWeight: '600', marginBottom: 4 },
-  cardSubtitle: { color: Colors.textMuted, fontSize: 11, letterSpacing: 0.3, marginBottom: 16 },
+  card:       { marginBottom: 14 },
+  cardTitle:  { color: Colors.textPrimary, fontSize: 15, fontWeight: '600', marginBottom: 4 },
+  cardSubtitle: { ...S.label, letterSpacing: 0.3, marginBottom: 16 },
 
-  weekBars: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', height: 90 },
+  weekBars:     { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', height: 90 },
   weekBarGroup: { alignItems: 'center', gap: 6 },
-  weekBar: { width: 28, borderRadius: 6, minHeight: 4 },
-  weekBarToday: { shadowColor: Colors.gold, shadowOpacity: 0.4, shadowRadius: 8, shadowOffset: { width: 0, height: 0 } },
+  weekBar:      { width: 28, borderRadius: 6, minHeight: 4 },
+  weekBarToday: { shadowOpacity: 0.4, shadowRadius: 8, shadowOffset: { width: 0, height: 0 } },
   weekBarLabel: { color: Colors.textMuted, fontSize: 11 },
 
-  appRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  appIcon: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  appRow:    { ...S.row, gap: 12 },
+  appIcon:   { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   appLetter: { fontSize: 15, fontWeight: '700' },
-  appRowTop: { flexDirection: 'row', justifyContent: 'space-between' },
-  appName: { color: Colors.textPrimary, fontSize: 13, fontWeight: '500' },
-  appTime: { color: Colors.textSecondary, fontSize: 12 },
-  progressBg: { height: 4, backgroundColor: Colors.surfaceHigh, borderRadius: 2, overflow: 'hidden' },
+  appRowTop: { ...S.rowBetween },
+  appName:   { color: Colors.textPrimary, fontSize: 13, fontWeight: '500' },
+  appTime:   { color: Colors.textSecondary, fontSize: 12 },
+  progressBg:   { ...S.progressTrackThin },
   progressFill: { height: 4, borderRadius: 2 },
 
-  premiumRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  premiumRow: { ...S.row, gap: 12 },
 });

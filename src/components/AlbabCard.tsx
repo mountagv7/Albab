@@ -1,6 +1,7 @@
 import React from 'react';
-import { View, StyleSheet, TouchableOpacity, ViewStyle } from 'react-native';
-import { Colors } from '../theme/colors';
+import { View, TouchableOpacity, ViewStyle } from 'react-native';
+import { useTheme } from '../context/ThemeContext';
+import { S } from '../theme/styles';
 
 interface Props {
   children: React.ReactNode;
@@ -11,8 +12,22 @@ interface Props {
 }
 
 export function AlbabCard({ children, style, goldBorder = false, onPress, padding = 16 }: Props) {
+  const { accentColor, accentBorder } = useTheme();
+
   const content = (
-    <View style={[styles.card, goldBorder && styles.goldBorder, { padding }, style]}>
+    <View style={[
+      S.card,
+      goldBorder && {
+        borderColor:   accentBorder,
+        shadowColor:   accentColor,
+        shadowOpacity: 0.12,
+        shadowRadius:  14,
+        shadowOffset:  { width: 0, height: 0 },
+        elevation:     4,
+      },
+      { padding },
+      style,
+    ]}>
       {children}
     </View>
   );
@@ -27,20 +42,3 @@ export function AlbabCard({ children, style, goldBorder = false, onPress, paddin
 
   return content;
 }
-
-const styles = StyleSheet.create({
-  card: {
-    backgroundColor: Colors.surfaceElevated,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
-  goldBorder: {
-    borderColor: Colors.borderGold,
-    shadowColor: Colors.gold,
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 0 },
-    elevation: 4,
-  },
-});

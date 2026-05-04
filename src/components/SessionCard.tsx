@@ -1,6 +1,8 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Animated } from 'react-native';
 import { Colors } from '../theme/colors';
+import { useTheme } from '../context/ThemeContext';
+import { S, accentSoftGlow } from '../theme/styles';
 import { SessionType } from '../data/mockData';
 
 interface Props {
@@ -10,19 +12,14 @@ interface Props {
 }
 
 export function SessionCard({ session, onPress, delay = 0 }: Props) {
+  const { accentColor, accentBg, accentBorder } = useTheme();
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const translateAnim = useRef(new Animated.Value(12)).current;
 
   useEffect(() => {
     Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 1, duration: 400, delay,
-        useNativeDriver: true,
-      }),
-      Animated.timing(translateAnim, {
-        toValue: 0, duration: 400, delay,
-        useNativeDriver: true,
-      }),
+      Animated.timing(fadeAnim, { toValue: 1, duration: 400, delay, useNativeDriver: true }),
+      Animated.timing(translateAnim, { toValue: 0, duration: 400, delay, useNativeDriver: true }),
     ]).start();
   }, []);
 
@@ -33,20 +30,17 @@ export function SessionCard({ session, onPress, delay = 0 }: Props) {
         activeOpacity={0.85}
         style={[
           styles.card,
-          session.active && styles.cardActive,
+          session.active && [S.softGlow, { borderColor: accentBorder, shadowColor: accentColor }],
         ]}
       >
-        {/* Gold top bar for active sessions */}
-        {session.active && <View style={styles.activeBar} />}
+        {session.active && <View style={[styles.activeBar, { backgroundColor: accentColor }]} />}
 
-        {/* Icon */}
-        <View style={[styles.iconBox, session.active && styles.iconBoxActive]}>
+        <View style={[styles.iconBox, session.active && { backgroundColor: accentBg, borderColor: accentBorder }]}>
           <Text style={styles.iconText}>
             {session.type === 'planning' ? '🗓' : '⏱'}
           </Text>
         </View>
 
-        {/* Info */}
         <View style={styles.info}>
           <Text style={styles.name}>{session.name}</Text>
           <Text style={styles.meta}>
@@ -54,10 +48,9 @@ export function SessionCard({ session, onPress, delay = 0 }: Props) {
           </Text>
         </View>
 
-        {/* Right */}
         <View style={styles.right}>
           {session.active ? (
-            <Text style={styles.activeDot}>● ACTIF</Text>
+            <Text style={[styles.activeDot, { color: accentColor }]}>● ACTIF</Text>
           ) : (
             <Text style={styles.chevron}>›</Text>
           )}
@@ -70,25 +63,15 @@ export function SessionCard({ session, onPress, delay = 0 }: Props) {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: Colors.surface,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: 16,
-    paddingVertical: 16,
+    ...S.card,
+    paddingVertical:   16,
     paddingHorizontal: 19,
-    marginBottom: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 16,
-    overflow: 'hidden',
-  },
-  cardActive: {
-    borderColor: 'rgba(201,168,76,0.4)',
-    shadowColor: Colors.gold,
-    shadowOpacity: 0.08,
-    shadowRadius: 20,
-    shadowOffset: { width: 0, height: 0 },
-    elevation: 3,
+    marginBottom:      12,
+    flexDirection:     'row',
+    alignItems:        'center',
+    gap:               16,
+    overflow:          'hidden',
+    padding:           0,
   },
   activeBar: {
     position: 'absolute',
@@ -96,29 +79,24 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: 2,
-    backgroundColor: Colors.gold,
     opacity: 0.7,
   },
   iconBox: {
-    width: 49,
-    height: 49,
-    borderRadius: 14,
-    backgroundColor: '#181818',
-    borderWidth: 1,
-    borderColor: '#222',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  iconBoxActive: {
-    backgroundColor: Colors.goldBg,
-    borderColor: 'rgba(201,168,76,0.3)',
+    width:           49,
+    height:          49,
+    borderRadius:    14,
+    backgroundColor: Colors.surfaceElevated,
+    borderWidth:     1,
+    borderColor:     Colors.border,
+    alignItems:      'center',
+    justifyContent:  'center',
   },
   iconText: { fontSize: 21 },
-  info: { flex: 1 },
-  name: { fontSize: 16, fontWeight: '600', color: Colors.textPrimary },
-  meta: { fontSize: 13, color: Colors.textMuted, marginTop: 3 },
-  right: { alignItems: 'flex-end' },
-  activeDot: { fontSize: 13, color: Colors.gold, fontWeight: '600' },
-  chevron: { fontSize: 21, color: Colors.textMuted },
-  nameAr: { fontSize: 12, color: Colors.textMuted, marginTop: 3 },
+  info:     { flex: 1 },
+  name:     { fontSize: 16, fontWeight: '600', color: Colors.textPrimary },
+  meta:     { ...S.meta, marginTop: 3 },
+  right:    { alignItems: 'flex-end' },
+  activeDot: { fontSize: 13, fontWeight: '600' },
+  chevron:   { fontSize: 21, color: Colors.textMuted },
+  nameAr:    { fontSize: 12, color: Colors.textMuted, marginTop: 3 },
 });

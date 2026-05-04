@@ -9,13 +9,16 @@ import { AlbabCard } from '../components/AlbabCard';
 import { GoldButton } from '../components/GoldButton';
 import { PremiumBadge } from '../components/PremiumBadge';
 import { Colors } from '../theme/colors';
+import { useTheme } from '../context/ThemeContext';
 import { t } from '../i18n';
+import { S } from '../theme/styles';
 
 type SessionState = 'idle' | 'running' | 'paused' | 'complete';
 const DURATIONS = [15, 20, 25, 30, 45, 60];
 const RING = 100; // radius for SVG-less ring
 
 export function FocusScreen() {
+  const { accentColor, accentBg, accentBorder, accentDim } = useTheme();
   const [state, setState] = useState<SessionState>('idle');
   const [selectedMin, setSelectedMin] = useState(25);
   const [remaining, setRemaining] = useState(25 * 60);
@@ -71,7 +74,7 @@ export function FocusScreen() {
     return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
   }
 
-  const ringColor = state === 'complete' ? Colors.productive : Colors.gold;
+  const ringColor = state === 'complete' ? Colors.productive : accentColor;
   const circumference = 2 * Math.PI * RING;
   const strokeDashoffset = circumference * (1 - progress);
 
@@ -92,7 +95,7 @@ export function FocusScreen() {
                 opacity: state === 'idle' ? 0 : 1,
               }]} />
               {/* Inner circle */}
-              <View style={[styles.ringInner, state === 'running' && styles.ringInnerGlow]}>
+              <View style={[styles.ringInner, state === 'running' && [styles.ringInnerGlow, { shadowColor: accentColor }]]}>
                 {state === 'complete' ? (
                   <View style={{ alignItems: 'center', gap: 8 }}>
                     <Text style={{ fontSize: 40 }}>✓</Text>
@@ -121,9 +124,10 @@ export function FocusScreen() {
                   <TouchableOpacity
                     key={min}
                     onPress={() => { setSelectedMin(min); setRemaining(min * 60); }}
-                    style={[styles.pickerItem, min === selectedMin && styles.pickerItemActive]}
+                    style={[styles.pickerItem, min === selectedMin && [styles.pickerItemActive, { borderColor: accentColor, backgroundColor: accentBg }]]}
+
                   >
-                    <Text style={[styles.pickerItemText, min === selectedMin && styles.pickerItemTextActive]}>
+                    <Text style={[styles.pickerItemText, min === selectedMin && { color: accentColor }]}>
                       {min}
                     </Text>
                   </TouchableOpacity>
@@ -154,7 +158,7 @@ export function FocusScreen() {
           {/* Khushu Mode card */}
           <AlbabCard goldBorder onPress={() => setShowPremium(true)} style={styles.khushuCard}>
             <View style={styles.khushuInner}>
-              <View style={styles.khushuIcon}>
+              <View style={[styles.khushuIcon, { backgroundColor: accentBg, borderColor: accentBorder }]}>
                 <Text style={{ fontSize: 22 }}>☪</Text>
               </View>
               <View style={{ flex: 1, gap: 3 }}>
@@ -164,7 +168,7 @@ export function FocusScreen() {
                 </View>
                 <Text style={styles.khushuDesc}>{t('khushuModeDesc')}</Text>
               </View>
-              <Text style={{ color: Colors.gold, fontSize: 18 }}>›</Text>
+              <Text style={{ color: accentColor, fontSize: 18 }}>›</Text>
             </View>
           </AlbabCard>
 
@@ -190,17 +194,17 @@ export function FocusScreen() {
       {/* Premium Modal */}
       <Modal visible={showPremium} transparent animationType="slide" onRequestClose={() => setShowPremium(false)}>
         <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setShowPremium(false)} />
-        <View style={styles.sheet}>
+        <View style={[styles.sheet, { borderColor: accentBorder }]}>
           <View style={styles.sheetHandle} />
           <Text style={{ fontSize: 42, textAlign: 'center', marginBottom: 12 }}>☪</Text>
           <Text style={styles.sheetTitle}>{t('khushuMode')}</Text>
           <Text style={styles.sheetDesc}>{t('premiumDesc')}</Text>
 
-          <TouchableOpacity style={styles.planBest}>
-            <LinearGradient colors={['rgba(201,168,76,0.1)', 'transparent']} style={styles.planGrad}>
+          <TouchableOpacity style={[styles.planBest, { borderColor: accentColor }]}>
+            <LinearGradient colors={[accentBg, 'transparent']} style={styles.planGrad}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Text style={styles.planLabelGold}>{t('premiumYearly')}</Text>
-                <View style={styles.bestTag}><Text style={styles.bestTagText}>BEST</Text></View>
+                <Text style={[styles.planLabelGold, { color: accentColor }]}>{t('premiumYearly')}</Text>
+                <View style={[styles.bestTag, { backgroundColor: accentBg }]}><Text style={[styles.bestTagText, { color: accentColor }]}>BEST</Text></View>
               </View>
               <Text style={styles.planSave}>{t('premiumYearlySave')}</Text>
             </LinearGradient>
@@ -221,7 +225,7 @@ export function FocusScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
+  container: { flex: 1 },
   scroll: { paddingHorizontal: 20, paddingBottom: 32 },
   title: { color: Colors.textPrimary, fontSize: 22, fontWeight: '700', marginTop: 16, marginBottom: 28 },
 
@@ -242,7 +246,7 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center', gap: 6,
   },
   ringInnerGlow: {
-    shadowColor: Colors.gold, shadowOpacity: 0.2, shadowRadius: 20, shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.2, shadowRadius: 20, shadowOffset: { width: 0, height: 0 },
   },
   timerText: { color: Colors.textPrimary, fontSize: 42, fontWeight: '700', letterSpacing: -1 },
   timerSub: { color: Colors.textMuted, fontSize: 10, fontWeight: '600', letterSpacing: 1.2 },
@@ -251,55 +255,54 @@ const styles = StyleSheet.create({
   pickerLabel: { color: Colors.textSecondary, fontSize: 12 },
   pickerRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap', justifyContent: 'center' },
   pickerItem: {
-    paddingHorizontal: 14, paddingVertical: 9, borderRadius: 10,
-    backgroundColor: Colors.surfaceElevated, borderWidth: 1, borderColor: Colors.border,
+    paddingHorizontal: 14,
+    paddingVertical:   9,
+    borderRadius:      10,
+    backgroundColor:   Colors.surfaceElevated,
+    borderWidth:       1,
+    borderColor:       Colors.border,
   },
-  pickerItemActive: { borderColor: Colors.gold, backgroundColor: 'rgba(201,168,76,0.12)' },
-  pickerItemText: { color: Colors.textSecondary, fontSize: 13, fontWeight: '600' },
-  pickerItemTextActive: { color: Colors.gold },
+  pickerItemActive: {},
+  pickerItemText:       { color: Colors.textSecondary, fontSize: 13, fontWeight: '600' },
+  pickerItemTextActive: {},
 
-  controls: { marginBottom: 24 },
+  controls:   { marginBottom: 24 },
   controlRow: { flexDirection: 'row', gap: 12 },
-  secondaryBtn: {
-    flex: 1, height: 54, borderRadius: 14,
-    backgroundColor: Colors.surfaceElevated, borderWidth: 1, borderColor: Colors.border,
-    alignItems: 'center', justifyContent: 'center',
-  },
-  secondaryBtnText: { color: Colors.textSecondary, fontSize: 15, fontWeight: '600' },
+  secondaryBtn:     { ...S.btnSecondary, flex: 1 },
+  secondaryBtnText: { ...S.btnLabelSecondary },
 
-  khushuCard: { marginBottom: 12 },
-  khushuInner: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+  khushuCard:     { marginBottom: 12 },
+  khushuInner:    { ...S.row, gap: 14 },
   khushuIcon: {
-    width: 48, height: 48, borderRadius: 12,
-    backgroundColor: 'rgba(201,168,76,0.1)',
-    borderWidth: 1, borderColor: Colors.borderGold,
-    alignItems: 'center', justifyContent: 'center',
+    width:          48,
+    height:         48,
+    borderRadius:   12,
+    borderWidth:    1,
+    alignItems:     'center',
+    justifyContent: 'center',
   },
-  khushuTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  khushuTitle: { color: Colors.textPrimary, fontSize: 15, fontWeight: '600' },
-  khushuDesc: { color: Colors.textSecondary, fontSize: 12 },
+  khushuTitleRow: { ...S.row, gap: 8 },
+  khushuTitle:    { color: Colors.textPrimary, fontSize: 15, fontWeight: '600' },
+  khushuDesc:     { color: Colors.textSecondary, fontSize: 12 },
 
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)' },
   sheet: {
-    backgroundColor: Colors.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24,
-    borderTopWidth: 1, borderColor: Colors.borderGold,
-    padding: 20, paddingBottom: 40,
+    backgroundColor: Colors.surface,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    borderTopWidth: 1,
+    padding: 20,
+    paddingBottom: 40,
   },
-  sheetHandle: { width: 36, height: 4, backgroundColor: Colors.border, borderRadius: 2, alignSelf: 'center', marginBottom: 24 },
-  sheetTitle: { color: Colors.textPrimary, fontSize: 22, fontWeight: '700', textAlign: 'center', marginBottom: 8 },
-  sheetDesc: { color: Colors.textSecondary, fontSize: 14, textAlign: 'center', lineHeight: 22, marginBottom: 24 },
-  planBest: {
-    borderRadius: 14, borderWidth: 1, borderColor: Colors.gold,
-    overflow: 'hidden', marginBottom: 10,
-  },
-  planGrad: { padding: 16 },
-  planLabelGold: { color: Colors.gold, fontSize: 15, fontWeight: '600' },
-  planSave: { color: Colors.productive, fontSize: 12, marginTop: 2 },
-  planNormal: {
-    borderRadius: 14, borderWidth: 1, borderColor: Colors.border,
-    backgroundColor: Colors.surfaceElevated, padding: 16, alignItems: 'center',
-  },
-  planLabel: { color: Colors.textPrimary, fontSize: 15, fontWeight: '500' },
-  bestTag: { backgroundColor: 'rgba(201,168,76,0.2)', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
-  bestTagText: { color: Colors.gold, fontSize: 10, fontWeight: '700' },
+  sheetHandle: { ...S.handle, marginBottom: 24 },
+  sheetTitle:  { color: Colors.textPrimary, fontSize: 22, fontWeight: '700', textAlign: 'center', marginBottom: 8 },
+  sheetDesc:   { ...S.bodySecondary, textAlign: 'center', marginBottom: 24 },
+  planBest:    { borderRadius: 14, borderWidth: 1, overflow: 'hidden', marginBottom: 10 },
+  planGrad:    { padding: 16 },
+  planLabelGold: { fontSize: 15, fontWeight: '600' },
+  planSave:    { color: Colors.productive, fontSize: 12, marginTop: 2 },
+  planNormal:  { ...S.cardElevated, alignItems: 'center' },
+  planLabel:   { color: Colors.textPrimary, fontSize: 15, fontWeight: '500' },
+  bestTag:     { borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
+  bestTagText: { fontSize: 10, fontWeight: '700' },
 });

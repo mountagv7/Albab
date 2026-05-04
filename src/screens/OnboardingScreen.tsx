@@ -7,7 +7,9 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { GlowingLogo } from '../components/GlowingLogo';
 import { GoldButton } from '../components/GoldButton';
 import { Colors } from '../theme/colors';
+import { useTheme } from '../context/ThemeContext';
 import { t } from '../i18n';
+import { S } from '../theme/styles';
 
 const { height } = Dimensions.get('window');
 
@@ -22,6 +24,7 @@ interface Props {
 }
 
 export function OnboardingScreen({ onDone }: Props) {
+  const { accentBg, accentBorder } = useTheme();
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(30)).current;
 
@@ -49,7 +52,7 @@ export function OnboardingScreen({ onDone }: Props) {
         <Animated.View style={[styles.features, { opacity: fadeAnim }]}>
           {FEATURES.map((f, i) => (
             <View key={i} style={styles.featureRow}>
-              <View style={styles.featureIcon}>
+              <View style={[styles.featureIcon, { backgroundColor: accentBg, borderColor: accentBorder }]}>
                 <Text style={styles.featureEmoji}>{f.icon}</Text>
               </View>
               <View style={styles.featureText}>
@@ -72,25 +75,25 @@ export function OnboardingScreen({ onDone }: Props) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
-  safe: { flex: 1, paddingHorizontal: 24 },
-  top: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 24 },
+  container:  { flex: 1 },
+  safe:       { flex: 1, paddingHorizontal: 24 },
+  top:        { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 24 },
   titleBlock: { alignItems: 'center', gap: 6 },
-  appName: { color: Colors.textPrimary, fontSize: 40, fontWeight: '800', letterSpacing: -1 },
-  tagline: { color: Colors.textSecondary, fontSize: 16 },
-  features: { gap: 14, marginBottom: 32 },
-  featureRow: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+  appName:    { color: Colors.textPrimary, fontSize: 40, fontWeight: '800', letterSpacing: -1 },
+  tagline:    { color: Colors.textSecondary, fontSize: 16 },
+  features:   { gap: 14, marginBottom: 32 },
+  featureRow: { ...S.row, gap: 14 },
   featureIcon: {
-    width: 44, height: 44, borderRadius: 12,
-    backgroundColor: 'rgba(201,168,76,0.1)',
-    borderWidth: 1, borderColor: Colors.borderGold,
-    alignItems: 'center', justifyContent: 'center',
+    ...S.iconBox,
+    width:  44,
+    height: 44,
+    borderWidth: 1,
   },
-  featureEmoji: { fontSize: 20 },
-  featureText: { flex: 1, gap: 2 },
-  featureTitle: { color: Colors.textPrimary, fontSize: 14, fontWeight: '600' },
+  featureEmoji:    { fontSize: 20 },
+  featureText:     { flex: 1, gap: 2 },
+  featureTitle:    { color: Colors.textPrimary, fontSize: 14, fontWeight: '600' },
   featureSubtitle: { color: Colors.textSecondary, fontSize: 12 },
-  bottom: { gap: 10, paddingBottom: 8 },
-  skipBtn: { alignItems: 'center', paddingVertical: 10 },
-  skipText: { color: Colors.textMuted, fontSize: 13 },
+  bottom:   { gap: 10, paddingBottom: 8 },
+  skipBtn:  { alignItems: 'center', paddingVertical: 10 },
+  skipText: { ...S.meta },
 });
